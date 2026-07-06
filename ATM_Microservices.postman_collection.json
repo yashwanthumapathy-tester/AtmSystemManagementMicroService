@@ -1,0 +1,337 @@
+{
+  "info": {
+    "name": "ATM System Management - Microservices API",
+    "description": "Full API collection for the ATM System Management microservices project: Auth Service, Customer Service, Account Service, and Transaction Service, all routed through the API Gateway (port 8080) with Eureka service discovery. All requests go through the gateway and require a JWT bearer token except /auth/register and /auth/login. Logging in via the 'Login' request automatically stores the token into the {{jwtToken}} collection variable for use by every other request.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{jwtToken}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "gatewayUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "authServiceUrl", "value": "http://localhost:8081", "type": "string" },
+    { "key": "customerServiceUrl", "value": "http://localhost:8082", "type": "string" },
+    { "key": "accountServiceUrl", "value": "http://localhost:8083", "type": "string" },
+    { "key": "transactionServiceUrl", "value": "http://localhost:8084", "type": "string" },
+    { "key": "eurekaUrl", "value": "http://localhost:8761", "type": "string" },
+    { "key": "jwtToken", "value": "", "type": "string" },
+    { "key": "customerId", "value": "1", "type": "string" },
+    { "key": "accountNo", "value": "1", "type": "string" },
+    { "key": "toAccountNo", "value": "2", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth Service",
+      "description": "Handles registration and login. Runs standalone on port 8081, and is also reachable through the gateway at /auth/**. Registration and login do not require a JWT.",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\",\n  \"mobile\": \"9876543210\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/auth/register",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registers a new user. Password is stored hashed (BCrypt)."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.token) {",
+                  "        pm.collectionVariables.set('jwtToken', data.token);",
+                  "        console.log('JWT token saved to {{jwtToken}}');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/auth/login",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Logs in and returns a JWT. The test script auto-saves the token into {{jwtToken}} so all other requests in this collection are authenticated automatically."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Customer Service",
+      "description": "Manages customer records. Routed through the gateway at /customer/**, runs standalone on port 8082.",
+      "item": [
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"9876543210\",\n  \"address\": \"123 Main Street, Chennai\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/customer",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["customer"]
+            },
+            "description": "Creates a new customer record."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/customer/{{customerId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["customer", "{{customerId}}"]
+            },
+            "description": "Fetches a single customer by their customerId."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/customer",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["customer"]
+            },
+            "description": "Lists all customers."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"9123456780\",\n  \"address\": \"456 New Street, Chennai\"\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/customer/{{customerId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["customer", "{{customerId}}"]
+            },
+            "description": "Updates an existing customer's details."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/customer/{{customerId}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["customer", "{{customerId}}"]
+            },
+            "description": "Deletes a customer by id."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Account Service",
+      "description": "Manages bank accounts: create, deposit, withdraw, transfer, balance inquiry. Routed through the gateway at /account/**, runs standalone on port 8083. Deposits/withdrawals also call the Transaction Service internally via Feign to log the transaction.",
+      "item": [
+        {
+          "name": "Create Account",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": {{customerId}},\n  \"accountHolderName\": \"John Doe\",\n  \"accountType\": \"Savings\",\n  \"balance\": 5000\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/account/create",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["account", "create"]
+            },
+            "description": "Creates a new account linked to a customerId. Balance defaults to 0 if omitted."
+          },
+          "response": []
+        },
+        {
+          "name": "Deposit",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNo\": {{accountNo}},\n  \"amount\": 1500\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/account/deposit",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["account", "deposit"]
+            },
+            "description": "Deposits an amount into the account. Amount must be greater than zero."
+          },
+          "response": []
+        },
+        {
+          "name": "Withdraw",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNo\": {{accountNo}},\n  \"amount\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/account/withdraw",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["account", "withdraw"]
+            },
+            "description": "Withdraws an amount from the account. Fails if amount <= 0 or balance is insufficient."
+          },
+          "response": []
+        },
+        {
+          "name": "Fund Transfer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromAccount\": {{accountNo}},\n  \"toAccount\": {{toAccountNo}},\n  \"amount\": 500\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/account/transfer",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["account", "transfer"]
+            },
+            "description": "Transfers funds from one account to another."
+          },
+          "response": []
+        },
+        {
+          "name": "Balance Inquiry",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/account/balance/{{accountNo}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["account", "balance", "{{accountNo}}"]
+            },
+            "description": "Returns the current balance for the given account number."
+          },
+          "response": []
+        },
+        {
+          "name": "View All Accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/account/all",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["account", "all"]
+            },
+            "description": "Lists every account in the system."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transaction Service",
+      "description": "Stores and retrieves transaction history. Routed through the gateway at /transaction/**, runs standalone on port 8084. Normally called internally by Account Service, but exposed directly too.",
+      "item": [
+        {
+          "name": "Save Transaction",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNo\": {{accountNo}},\n  \"transactionType\": \"DEPOSIT\",\n  \"amount\": 1500,\n  \"balanceAfterTransaction\": 6500\n}"
+            },
+            "url": {
+              "raw": "{{gatewayUrl}}/transaction",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["transaction"]
+            },
+            "description": "Manually records a transaction (Account Service normally does this automatically for deposits/withdrawals)."
+          },
+          "response": []
+        },
+        {
+          "name": "Transaction History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/transaction/{{accountNo}}",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["transaction", "{{accountNo}}"]
+            },
+            "description": "Returns the full transaction history for the given account number."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Eureka Server (Discovery)",
+      "description": "Not a REST API for the domain, but useful to confirm all services have registered.",
+      "item": [
+        {
+          "name": "View Registered Services (Dashboard)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{eurekaUrl}}/",
+              "host": ["{{eurekaUrl}}"],
+              "path": [""]
+            },
+            "description": "Eureka dashboard HTML page listing registered service instances (AUTH-SERVICE, CUSTOMER-SERVICE, ACCOUNT-SERVICE, TRANSACTION-SERVICE, API-GATEWAY)."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
